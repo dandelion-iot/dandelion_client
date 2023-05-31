@@ -10,7 +10,7 @@ class User {
 
   factory User.fromObject(Map map) {
     List<dynamic>? contactList = map['contacts'];
-    List<Contact> contacts = contactList?.map((item) => Contact.fromObject(item)).toList() ?? [];
+    List<Contact> contacts = contactList?.map((item) => Contact.fromMap(item)).toList() ?? [];
     return User(map['cellPhoneNumber'], map['nickName'],contacts);
   }
 }

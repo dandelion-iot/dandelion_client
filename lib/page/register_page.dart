@@ -1,4 +1,6 @@
+import 'package:dandelion_client/constant.dart';
 import 'package:dandelion_client/service/rest_client.dart';
+import 'package:dandelion_client/service/websocket_service.dart';
 import 'package:flutter/material.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -58,9 +60,13 @@ class _RegisterPageState extends State<RegisterPage> {
     var cellPhoneNumber = cellPhoneNumberController.text;
     var nickName = nickNameController.text;
     if (cellPhoneNumber.isNotEmpty && nickName.isNotEmpty) {
-      var isRegistered = await RestClient.registerUser(cellPhoneNumber, nickName);
+      var isRegistered =
+          await RestClient.registerUser(cellPhoneNumber, nickName);
+      print('isRegistered: $isRegistered');
       if (isRegistered && context.mounted) {
-        Navigator.of(context).pushNamed("/contacts");
+        WebSocketService().init(cellPhoneNumber);
+          await prefs.setString('cellPhoneNumber', cellPhoneNumber);
+        if (context.mounted) Navigator.of(context).pushNamed("/contacts");
       }
     }
   }

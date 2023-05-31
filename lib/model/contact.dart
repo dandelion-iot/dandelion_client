@@ -5,7 +5,17 @@ class Contact {
 
   Contact(this.name, this.cellPhoneNumber);
 
-  factory Contact.fromObject(Map map) {
-    return Contact(map['name'], map['cellPhoneNumber']);
+  factory Contact.fromMap(Map<String, dynamic> map) {
+    return Contact(
+      map['name'] as String,
+      map['cellPhoneNumber'] as String,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'cellPhoneNumber': cellPhoneNumber,
+    };
   }
 }

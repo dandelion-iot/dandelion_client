@@ -2,11 +2,9 @@ import 'dart:convert';
 
 import 'package:dandelion_client/constant.dart';
 import 'package:dandelion_client/model/contact.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
 class RestClient {
-  static const storage = FlutterSecureStorage();
   static String baseURL = '/api/v1/resources';
 
   /*
@@ -29,20 +27,16 @@ class RestClient {
     print(uri);
     var response = await http.get(uri, headers: headers);
 
-    if (response.statusCode == 200) {
-      print('User registered success');
-      await storage.write(key: "cellPhoneNumber", value: cellPhoneNumber);
-      return true;
-    }
-    return false;
+    return response.statusCode == 200 ? true : false;
   }
 
   /*
   * Add a contact
   * */
-  static Future<bool> addContact(String contactCellPhoneNumber, String name) async {
+  static Future<bool> addContact(
+      String contactCellPhoneNumber, String name) async {
     String url = '$baseURL/contact';
-    var cellPhoneNumber = await storage.read(key: 'cellPhoneNumber');
+    var cellPhoneNumber = prefs.getString('cellPhoneNumber');
     var reqParameters = {
       'cellPhoneNumber': cellPhoneNumber,
       'contactCellPhoneNumber': contactCellPhoneNumber,
@@ -65,7 +59,7 @@ class RestClient {
   * */
   static Future<List<Contact>> listContacts() async {
     String url = '$baseURL/contact/list';
-    var cellPhoneNumber = await storage.read(key: 'cellPhoneNumber');
+    var cellPhoneNumber = prefs.getString('cellPhoneNumber');
     var reqParameters = {'cellPhoneNumber': cellPhoneNumber};
     var headers = {
       'Content-Type': 'application/json',
@@ -75,10 +69,22 @@ class RestClient {
     var response = await http.get(uri, headers: headers);
     if (response.statusCode == 200) {
       final listMap = jsonDecode(response.body) as List<dynamic>;
-      return listMap.map((e) => Contact.fromObject(e)).toList();
+      return listMap.map((e) => Contact.fromMap(e)).toList();
     } else {
       print('Error: ${response.statusCode}');
     }
     return List.empty();
+  }
+
+  static Future<Future<http.StreamedResponse>> sseClient() async {
+    var cellPhoneNumber = prefs.getString('cellPhoneNumber');
+    String url = '$baseURL/sse/$cellPhoneNumber';
+
+    final sseClient = http.Client();
+    var uri = Uri.http(serverBaseUrl, url);
+    final sseRequest = http.Request('GET', uri);
+    sseRequest.headers['Accept'] = 'text/event-stream';
+
+    return sseClient.send(sseRequest);
   }
 }

@@ -2,6 +2,7 @@ import 'package:dandelion_client/dialog/add_contact_dialog.dart';
 import 'package:dandelion_client/model/contact.dart';
 import 'package:dandelion_client/service/rest_client.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class ContactPage extends StatefulWidget {
   const ContactPage({Key? key}) : super(key: key);
@@ -12,7 +13,6 @@ class ContactPage extends StatefulWidget {
 
 class _ContactPageState extends State<ContactPage> {
   List<Contact> contactList = [];
-
 
   @override
   void initState() {
@@ -40,16 +40,22 @@ class _ContactPageState extends State<ContactPage> {
         ),
         body: ListView.builder(
           itemCount: contactList.length,
-            itemBuilder: (context,index) {
-              return Card(
-                child: ListTile(
-                  leading: CircleAvatar(child: Text('${index + 1}'),),
-                  title: Text(contactList.elementAt(index).cellPhoneNumber),
-                  subtitle: Text(contactList.elementAt(index).name),
-                  trailing: IconButton(onPressed: () {}, icon: Icon(Icons.call)),
+          itemBuilder: (context, index) {
+            return Card(
+              child: ListTile(
+                leading: CircleAvatar(
+                  child: Text('${index + 1}'),
                 ),
-              );
-            }
+                title: Text(contactList.elementAt(index).cellPhoneNumber),
+                subtitle: Text(contactList.elementAt(index).name),
+                trailing: IconButton(
+                  onPressed: () => Navigator.of(context).pushNamed('/call',
+                      arguments: {"targetContact" : contactList.elementAt(index)}),
+                  icon: Icon(Icons.call),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
@@ -59,6 +65,19 @@ class _ContactPageState extends State<ContactPage> {
     var contacts = await RestClient.listContacts();
     setState(() {
       contactList = contacts;
+    });
+  }
+
+  Future<void> eventListener() async {
+    final sseClient = http.Client();
+    final sseRequest =
+        http.Request('GET', Uri.parse('http://example.com/events'));
+    sseRequest.headers['Accept'] = 'text/event-stream';
+
+    sseClient.send(sseRequest).then((sseResponse) {
+      sseResponse.stream.listen((sseEvent) {
+        print(sseEvent);
+      });
     });
   }
 }
