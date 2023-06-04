@@ -8,15 +8,16 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 class WebSocketService {
   static final WebSocketService _singleton = WebSocketService._internal();
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
   factory WebSocketService() => _singleton;
 
   WebSocketService._internal();
 
   late final Uri uri;
   late final WebSocketChannel ws;
-  late final StreamController<String> _messageController =
-      StreamController<String>.broadcast();
+  late final StreamController<String> _messageController = StreamController<String>.broadcast();
   late final Stream<String> _messageStream;
+
   Stream<String> get messageStream => _messageController.stream;
 
   Future init(String channel) async {
@@ -31,12 +32,17 @@ class WebSocketService {
     });
   }
 
-  void _handleMessage(String message) {
+  Future _handleMessage(String message) async {
     var payload = jsonDecode(message);
     var type = payload['type'];
-    var room = payload['room'];
-    if (type == 'joined') {
-      navigatorKey.currentState?.pushNamed('/call', arguments: {'room': room});
+    if (type == 'join') {
+      var room = payload['room'];
+      await prefs.setString('room', room);
+      print('WEBSOCKET -> Receive joined message');
+      navigatorKey.currentState?.pushNamed('/call');
+    } else if (type == 'hangup') {
+      print('WEBSOCKET -> Remote peer hangup');
+      navigatorKey.currentState?.pushReplacementNamed('/contacts');
     }
   }
 

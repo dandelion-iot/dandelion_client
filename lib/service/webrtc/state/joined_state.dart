@@ -17,6 +17,7 @@ class RTCJoinedState implements RTCState {
   Future response(RTCPeerConnection? pc) async {
     print('send offer');
     var room = prefs.getString('room');
+    print('Room -> $room');
     var offer = await pc!.createOffer();
     pc.setLocalDescription(offer);
     var payload = {'type': offer.type,'room':room, 'sdp': offer.sdp};

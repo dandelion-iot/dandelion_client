@@ -21,16 +21,15 @@ class WebRTCContext {
 
   MediaStream? _localStream;
   RTCPeerConnection? pc;
+  late RTCVideoRenderer _localRenderer;
+  late RTCVideoRenderer _remoteRenderer;
 
-  Future init(RTCVideoRenderer localRenderer, RTCVideoRenderer remoteRenderer) async {
+  bool _isLocalRendererInitialized = false;
+  bool _isRemoteRendererInitialized = false;
+
+  Future initializeLocalRenderer(RTCVideoRenderer localRenderer, MediaStream? localStream) async {
     pc = await createPeerConnection(stunServers, sdpConstraints);
-
-    final mediaConstraints = {
-      'audio': true,
-      'video': {'facingMode': 'user'}
-    };
-
-    _localStream = await Helper.openCamera(mediaConstraints);
+    _localStream = localStream;
 
     _localStream!.getTracks().forEach((track) {
       pc!.addTrack(track, _localStream!);
@@ -42,13 +41,24 @@ class WebRTCContext {
       _sendIce(ice);
     };
 
+    _localRenderer = localRenderer;
+    _isLocalRendererInitialized = true;
+  }
+
+  Future initializeRemoteRenderer(RTCVideoRenderer remoteRenderer) async {
     pc!.onAddStream = (stream) {
       remoteRenderer.srcObject = stream;
+      _remoteRenderer = remoteRenderer;
+      _isRemoteRendererInitialized = true;
     };
+  }
 
-    if (_localStream != null) {
-      localRenderer.srcObject = _localStream;
-    }
+  bool isRemoteRendererInitialized() {
+    return _isRemoteRendererInitialized;
+  }
+
+  bool isLocalRendererInitialized() {
+    return _isLocalRendererInitialized;
   }
 
   Future _sendIce(RTCIceCandidate ice) async {
@@ -63,18 +73,14 @@ class WebRTCContext {
     _ws.send(jsonEncode(payload));
   }
 
-  Future requestRoom() async {
-    var payload = {'type': 'room'};
+  Future joinRoom(Contact? targetContact) async {
+    var payload = {'type': 'join', 'target': targetContact!.cellPhoneNumber};
     _ws.send(jsonEncode(payload));
   }
 
-  Future joinRoom(Contact? targetContact) async {
+  Future joined() async {
     var room = prefs.getString('room');
-    var payload = {
-      'type': 'join',
-      'room': room,
-      'target': targetContact!.cellPhoneNumber
-    };
+    var payload = {'type': 'joined', 'room': room};
     _ws.send(jsonEncode(payload));
   }
 
@@ -100,7 +106,13 @@ class WebRTCContext {
   }
 
   void dispose() {
-    _localStream?.getTracks().forEach((track) => track.stop());
+    _localStream?.getTracks().forEach((track) => {
+          track.stop(),
+          _localStream?.removeTrack(track),
+        });
+    _localStream?.dispose();
+    _localRenderer.dispose();
+    _remoteRenderer.dispose();
     pc?.close();
   }
 }

@@ -50,7 +50,7 @@ class _ContactPageState extends State<ContactPage> {
                 subtitle: Text(contactList.elementAt(index).name),
                 trailing: IconButton(
                   onPressed: () => Navigator.of(context).pushNamed('/call',
-                      arguments: {"targetContact" : contactList.elementAt(index)}),
+                      arguments: contactList.elementAt(index)),
                   icon: Icon(Icons.call),
                 ),
               ),

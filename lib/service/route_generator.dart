@@ -12,14 +12,9 @@ class RouteHandler {
       case "/contacts":
         return MaterialPageRoute(builder: (_) => ContactPage());
       case "/call":
-        var arguments = settings.arguments as Map<String, dynamic>;
-        var contact = arguments['targetContact'] as Contact?;
-        var room = arguments['room'] as String?;
+        var contact = settings.arguments as Contact?;
         return MaterialPageRoute(
-          builder: (_) => CallPage(
-            targetContact: contact,
-            room: room,
-          ),
+          builder: (_) => CallPage(targetContact: contact),
         );
       default:
         return MaterialPageRoute(builder: (_) => RegisterPage());
