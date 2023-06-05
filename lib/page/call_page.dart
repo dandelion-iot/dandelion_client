@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:dandelion_client/constant.dart';
 import 'package:dandelion_client/model/contact.dart';
-import 'package:dandelion_client/service/webrtc/webrtc_context.dart';
+import 'package:dandelion_client/service/webrtc_context.dart';
 import 'package:dandelion_client/service/websocket_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
