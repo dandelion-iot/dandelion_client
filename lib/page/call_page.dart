@@ -24,9 +24,10 @@ class _CallPageState extends State<CallPage> {
   late final WebRTCContext _webRTCContext = WebRTCContext();
   final player = AudioPlayer();
   late MediaStream mediaStream;
-  final _localRenderer = RTCVideoRenderer();
-  final _remoteRenderer = RTCVideoRenderer();
+  final _bigRenderer = RTCVideoRenderer();
+  final _thumbRenderer = RTCVideoRenderer();
   bool _isAnswered = true;
+  bool _isBigRendererLocal = true;
 
   @override
   void initState() {
@@ -40,17 +41,17 @@ class _CallPageState extends State<CallPage> {
   }
 
   void initRenderers() async {
-    await _localRenderer.initialize();
-    await _remoteRenderer.initialize();
+    await _bigRenderer.initialize();
+    await _thumbRenderer.initialize();
   }
 
   Future init() async {
     try {
       mediaStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
       setState(() {
-        _localRenderer.srcObject = mediaStream;
+        _bigRenderer.srcObject = mediaStream;
       });
-      await _webRTCContext.createConnection(_localRenderer, _remoteRenderer, mediaStream);
+      await _webRTCContext.createConnection(_bigRenderer, _thumbRenderer, mediaStream);
       if (widget.targetContact != null) {
         await _webRTCContext.createRoom(widget.targetContact!);
       } else {
@@ -82,6 +83,7 @@ class _CallPageState extends State<CallPage> {
         break;
       case 'ice':
         await _webRTCContext.setCandidate(payload);
+        setState(() {});
         break;
     }
   }
@@ -92,10 +94,18 @@ class _CallPageState extends State<CallPage> {
   }
 
   Future answerToCall() async {
+    print('answerToCall clicked');
     await player.stop();
     await _webRTCContext.sendJoined();
     setState(() {
       _isAnswered = true;
+    });
+  }
+
+  Future switchRenderer() async {
+    print('switchRenderer clicked');
+    setState(() {
+      _isBigRendererLocal = !_isBigRendererLocal;
     });
   }
 
@@ -107,7 +117,7 @@ class _CallPageState extends State<CallPage> {
           alignment: AlignmentDirectional.bottomStart,
           children: [
             RTCVideoView(
-              _localRenderer,
+              _isBigRendererLocal ? _bigRenderer : _thumbRenderer,
               placeholderBuilder: (context) {
                 return Container(
                   color: Colors.grey,
@@ -120,7 +130,7 @@ class _CallPageState extends State<CallPage> {
                 visible: _isAnswered,
                 replacement: Center(
                   child: GestureDetector(
-                    onTap: () => answerToCall(),
+                    onTap: answerToCall,
                     child: Lottie.asset('assets/data.json', repeat: true),
                   ),
                 ),
@@ -132,14 +142,18 @@ class _CallPageState extends State<CallPage> {
                       child: SizedBox(
                         width: 150,
                         height: 200,
-                        child: RTCVideoView(
-                          _remoteRenderer,
-                          placeholderBuilder: (context) {
-                            return Container(
-                              color: Colors.grey,
-                              child: Text('Wait for remote video ...'),
-                            );
-                          },
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: switchRenderer,
+                          child: RTCVideoView(
+                            _isBigRendererLocal ? _thumbRenderer : _bigRenderer,
+                            placeholderBuilder: (context) {
+                              return Container(
+                                color: Colors.grey,
+                                child: Text('Wait for remote video ...'),
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ),
@@ -169,8 +183,8 @@ class _CallPageState extends State<CallPage> {
         });
     mediaStream.dispose();
     _webRTCContext.dispose();
-    _localRenderer.dispose();
-    _remoteRenderer.dispose();
+    _bigRenderer.dispose();
+    _thumbRenderer.dispose();
     _sendHangup();
     Wakelock.disable();
     super.dispose();

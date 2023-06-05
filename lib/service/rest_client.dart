@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:dandelion_client/constant.dart';
 import 'package:dandelion_client/model/contact.dart';
@@ -23,7 +24,7 @@ class RestClient {
 
     print(queryParams);
 
-    var uri = Uri.http(serverBaseUrl, url, queryParams);
+    var uri = Uri.https(serverBaseUrl, url, queryParams);
     print(uri);
     var response = await http.get(uri, headers: headers);
 
@@ -46,7 +47,7 @@ class RestClient {
       'Content-Type': 'application/json',
     };
 
-    var uri = Uri.http(serverBaseUrl, url, reqParameters);
+    var uri = Uri.https(serverBaseUrl, url, reqParameters);
     var response = await http.get(uri, headers: headers);
     if (response.statusCode == 200) {
       return true;
@@ -65,7 +66,7 @@ class RestClient {
       'Content-Type': 'application/json',
     };
 
-    var uri = Uri.http(serverBaseUrl, url, reqParameters);
+    var uri = Uri.https(serverBaseUrl, url, reqParameters);
     var response = await http.get(uri, headers: headers);
     if (response.statusCode == 200) {
       final listMap = jsonDecode(response.body) as List<dynamic>;
@@ -81,7 +82,7 @@ class RestClient {
     String url = '$baseURL/sse/$cellPhoneNumber';
 
     final sseClient = http.Client();
-    var uri = Uri.http(serverBaseUrl, url);
+    var uri = Uri.https(serverBaseUrl, url);
     final sseRequest = http.Request('GET', uri);
     sseRequest.headers['Accept'] = 'text/event-stream';
 
