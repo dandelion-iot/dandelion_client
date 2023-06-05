@@ -3,10 +3,6 @@ import 'dart:convert';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:dandelion_client/constant.dart';
 import 'package:dandelion_client/model/contact.dart';
-import 'package:dandelion_client/service/webrtc/state/answer_state.dart';
-import 'package:dandelion_client/service/webrtc/state/ice_state.dart';
-import 'package:dandelion_client/service/webrtc/state/joined_state.dart';
-import 'package:dandelion_client/service/webrtc/state/offer_state.dart';
 import 'package:dandelion_client/service/webrtc/webrtc_context.dart';
 import 'package:dandelion_client/service/websocket_service.dart';
 import 'package:flutter/material.dart';
@@ -27,48 +23,42 @@ class _CallPageState extends State<CallPage> {
   late final WebSocketService _ws = WebSocketService();
   late final WebRTCContext _webRTCContext = WebRTCContext();
   final player = AudioPlayer();
+  late MediaStream mediaStream;
   final _localRenderer = RTCVideoRenderer();
   final _remoteRenderer = RTCVideoRenderer();
-  bool _isLocalRendererInitialized = false;
-  bool _isRemoteRendererInitialized = false;
   bool _isAnswered = true;
 
   @override
   void initState() {
     print('InitState of CallPage executed');
-    super.initState();
-    Wakelock.enable();
+    Wakelock.enable(); //TODO : enable only for voice
+    _ws.setMessageCallback((type, payload) => messageListener(type, payload));
+    initRenderers();
     init();
+
+    super.initState();
+  }
+
+  void initRenderers() async {
+    await _localRenderer.initialize();
+    await _remoteRenderer.initialize();
   }
 
   Future init() async {
     try {
-      MediaStream localStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
-      await _localRenderer.initialize();
-      await _webRTCContext.initializeLocalRenderer(_localRenderer, localStream);
-
-      eventListener();
-
-      /*
-    * When client try call to contact
-    * */
+      mediaStream = await navigator.mediaDevices.getUserMedia(mediaConstraints);
+      setState(() {
+        _localRenderer.srcObject = mediaStream;
+      });
+      await _webRTCContext.createConnection(_localRenderer, _remoteRenderer, mediaStream);
       if (widget.targetContact != null) {
-        await _webRTCContext.joinRoom(widget.targetContact);
+        await _webRTCContext.createRoom(widget.targetContact!);
       } else {
-        /*
-      * When receive incoming call
-      * */
         setState(() {
           _isAnswered = false;
         });
         playRing();
       }
-
-      await Future.delayed(Duration(seconds: 1));
-
-      setState(() {
-        _isLocalRendererInitialized = _webRTCContext.isLocalRendererInitialized();
-      });
     } catch (e) {
       print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
       print('Error initializing: $e');
@@ -76,35 +66,24 @@ class _CallPageState extends State<CallPage> {
     }
   }
 
-  Future eventListener() async {
-    _ws.messageStream.listen((event) async {
-      var payload = jsonDecode(event);
-      var type = payload['type'];
-      print('Receive type: $type');
-      switch (type) {
-        case 'joined':
-          var room = payload['room'];
-          await prefs.setString('room', room);
-
-          await _remoteRenderer.initialize();
-          await _webRTCContext.initializeRemoteRenderer(_remoteRenderer);
-          setState(() {
-            _isRemoteRendererInitialized = _webRTCContext.isRemoteRendererInitialized();
-          });
-
-          _webRTCContext.handleRequest(RTCJoinedState(), payload);
-          break;
-        case 'offer':
-          _webRTCContext.handleRequest(RTCOfferState(), payload);
-          break;
-        case 'answer':
-          _webRTCContext.handleRequest(RTCAnswerState(), payload);
-          break;
-        case 'ice':
-          _webRTCContext.handleRequest(RTCIceState(), payload);
-          break;
-      }
-    });
+  Future messageListener(String type, Map<String, dynamic> payload) async {
+    switch (type) {
+      case 'joined':
+        var room = payload['room'];
+        await prefs.setString('room', room);
+        await _webRTCContext.sendOffer();
+        break;
+      case 'offer':
+        await _webRTCContext.setRemoteDescription(payload);
+        await _webRTCContext.sendAnswer();
+        break;
+      case 'answer':
+        await _webRTCContext.setRemoteDescription(payload);
+        break;
+      case 'ice':
+        await _webRTCContext.setCandidate(payload);
+        break;
+    }
   }
 
   Future playRing() async {
@@ -113,15 +92,10 @@ class _CallPageState extends State<CallPage> {
   }
 
   Future answerToCall() async {
-    await _remoteRenderer.initialize();
-    await _webRTCContext.initializeRemoteRenderer(_remoteRenderer);
-
-    await _webRTCContext.joined();
-
+    await player.stop();
+    await _webRTCContext.sendJoined();
     setState(() {
-      _isRemoteRendererInitialized = _webRTCContext.isRemoteRendererInitialized();
       _isAnswered = true;
-      player.stop();
     });
   }
 
@@ -132,7 +106,7 @@ class _CallPageState extends State<CallPage> {
         body: Stack(
           alignment: AlignmentDirectional.bottomStart,
           children: [
-            if (_isLocalRendererInitialized) RTCVideoView(_localRenderer),
+            RTCVideoView(_localRenderer),
             Positioned(
               child: Visibility(
                 visible: _isAnswered,
@@ -145,15 +119,14 @@ class _CallPageState extends State<CallPage> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (_isRemoteRendererInitialized)
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: SizedBox(
-                          width: 150,
-                          height: 200,
-                          child: RTCVideoView(_remoteRenderer),
-                        ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: SizedBox(
+                        width: 150,
+                        height: 200,
+                        child: RTCVideoView(_remoteRenderer),
                       ),
+                    ),
                   ],
                 ),
               ),
@@ -164,12 +137,25 @@ class _CallPageState extends State<CallPage> {
     );
   }
 
-  @override
-  void dispose() {
-    _webRTCContext.dispose();
+  _sendHangup() {
+    player.stop();
     var room = prefs.getString('room');
     var payload = {'type': 'hangup', 'room': room};
     _ws.send(jsonEncode(payload));
+  }
+
+  @override
+  void dispose() {
+    print('Call page dispose executed');
+    mediaStream.getTracks().forEach((track) => {
+          track.stop(),
+          mediaStream.removeTrack(track),
+        });
+    mediaStream.dispose();
+    _webRTCContext.dispose();
+    _localRenderer.dispose();
+    _remoteRenderer.dispose();
+    _sendHangup();
     Wakelock.disable();
     super.dispose();
   }

@@ -2,66 +2,65 @@ import 'dart:convert';
 
 import 'package:dandelion_client/constant.dart';
 import 'package:dandelion_client/model/contact.dart';
-import 'package:dandelion_client/service/webrtc/abstract_state.dart';
-import 'package:dandelion_client/service/webrtc/state/answer_state.dart';
-import 'package:dandelion_client/service/webrtc/state/ice_state.dart';
-import 'package:dandelion_client/service/webrtc/state/joined_state.dart';
-import 'package:dandelion_client/service/webrtc/state/offer_state.dart';
 import 'package:dandelion_client/service/websocket_service.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 class WebRTCContext {
-  static final WebRTCContext _singleton = WebRTCContext._internal();
-
-  WebRTCContext._internal();
-
-  factory WebRTCContext() => _singleton;
-
   late final WebSocketService _ws = WebSocketService();
 
-  MediaStream? _localStream;
-  RTCPeerConnection? pc;
-  late RTCVideoRenderer _localRenderer;
-  late RTCVideoRenderer _remoteRenderer;
+  late RTCPeerConnection _peerConnection;
 
-  bool _isLocalRendererInitialized = false;
-  bool _isRemoteRendererInitialized = false;
+  Future createConnection(RTCVideoRenderer localRenderer, RTCVideoRenderer remoteRenderer, MediaStream mediaStream) async {
+    _peerConnection = await createPeerConnection(stunServers, sdpConstraints);
 
-  Future initializeLocalRenderer(RTCVideoRenderer localRenderer, MediaStream? localStream) async {
-    pc = await createPeerConnection(stunServers, sdpConstraints);
-    _localStream = localStream;
-
-    _localStream!.getTracks().forEach((track) {
-      pc!.addTrack(track, _localStream!);
+    mediaStream.getTracks().forEach((track) {
+      _peerConnection.addTrack(track, mediaStream);
     });
 
-    localRenderer.srcObject = _localStream;
-
-    pc!.onIceCandidate = (ice) {
-      _sendIce(ice);
+    _peerConnection.onIceCandidate = (ice) {
+      if (ice.candidate != null && _peerConnection.signalingState != RTCSignalingState.RTCSignalingStateClosed) {
+        try {
+          print(ice);
+          sendIce(ice);
+        } catch (e) {
+          print('onIceCandidate error $e');
+        }
+      }
     };
 
-    _localRenderer = localRenderer;
-    _isLocalRendererInitialized = true;
-  }
-
-  Future initializeRemoteRenderer(RTCVideoRenderer remoteRenderer) async {
-    pc!.onAddStream = (stream) {
+    _peerConnection.onAddStream = (stream) {
       remoteRenderer.srcObject = stream;
-      _remoteRenderer = remoteRenderer;
-      _isRemoteRendererInitialized = true;
     };
   }
 
-  bool isRemoteRendererInitialized() {
-    return _isRemoteRendererInitialized;
+  Future setCandidate(Map<String, dynamic> payload) async {
+    var candidate = RTCIceCandidate(payload['candidate'], payload['sdpMid'], payload['sdpMLineIndex']);
+    await _peerConnection.addCandidate(candidate);
   }
 
-  bool isLocalRendererInitialized() {
-    return _isLocalRendererInitialized;
+  Future setRemoteDescription(Map<String, dynamic> payload) async {
+    var description = RTCSessionDescription(payload['sdp'], payload['type']);
+    await _peerConnection.setRemoteDescription(description);
   }
 
-  Future _sendIce(RTCIceCandidate ice) async {
+  Future sendOffer() async {
+    var room = prefs.getString('room');
+    var offer = await _peerConnection.createOffer();
+    _peerConnection.setLocalDescription(offer);
+    var payload = {'type': offer.type, 'room': room, 'sdp': offer.sdp};
+    await _peerConnection.setLocalDescription(offer);
+    _ws.send(jsonEncode(payload));
+  }
+
+  Future sendAnswer() async {
+    var room = prefs.getString('room');
+    var answer = await _peerConnection.createAnswer();
+    await _peerConnection.setLocalDescription(answer);
+    var payload = {'type': answer.type, 'room': room, 'sdp': answer.sdp};
+    _ws.send(jsonEncode(payload));
+  }
+
+  Future sendIce(RTCIceCandidate ice) async {
     var room = prefs.getString('room');
     var payload = {
       'type': 'ice',
@@ -73,46 +72,20 @@ class WebRTCContext {
     _ws.send(jsonEncode(payload));
   }
 
-  Future joinRoom(Contact? targetContact) async {
-    var payload = {'type': 'join', 'target': targetContact!.cellPhoneNumber};
+  Future createRoom(Contact targetContact) async {
+    var payload = {'type': 'join', 'target': targetContact.cellPhoneNumber};
     _ws.send(jsonEncode(payload));
   }
 
-  Future joined() async {
+  Future sendJoined() async {
     var room = prefs.getString('room');
     var payload = {'type': 'joined', 'room': room};
     _ws.send(jsonEncode(payload));
   }
 
-  Future handleRequest(RTCState state, Map<String, dynamic> payload) async {
-    switch (state.runtimeType) {
-      case RTCOfferState:
-        var offerState = state as RTCOfferState;
-        offerState.handle(payload, pc);
-        break;
-      case RTCJoinedState:
-        var joinedState = state as RTCJoinedState;
-        joinedState.handle(payload, pc);
-        break;
-      case RTCIceState:
-        var iceState = state as RTCIceState;
-        iceState.handle(payload, pc);
-        break;
-      case RTCAnswerState:
-        var answerState = state as RTCAnswerState;
-        answerState.handle(payload, pc);
-        break;
-    }
-  }
-
   void dispose() {
-    _localStream?.getTracks().forEach((track) => {
-          track.stop(),
-          _localStream?.removeTrack(track),
-        });
-    _localStream?.dispose();
-    _localRenderer.dispose();
-    _remoteRenderer.dispose();
-    pc?.close();
+    print('WebRTC service dispose executed');
+    _peerConnection.dispose();
+    _peerConnection.close();
   }
 }

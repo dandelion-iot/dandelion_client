@@ -5,6 +5,8 @@ import 'package:dandelion_client/constant.dart';
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+typedef MessageCallback = void Function(String type, Map<String, dynamic>);
+
 class WebSocketService {
   static final WebSocketService _singleton = WebSocketService._internal();
   final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -15,21 +17,20 @@ class WebSocketService {
 
   late final Uri uri;
   late final WebSocketChannel ws;
-  late final StreamController<String> _messageController = StreamController<String>.broadcast();
-  late final Stream<String> _messageStream;
-
-  Stream<String> get messageStream => _messageController.stream;
+  late MessageCallback _messageCallback;
 
   Future init(String channel) async {
     String wsUrl = 'ws://$serverBaseUrl/webrtc/signal/$channel';
     print('Connect to $wsUrl');
     uri = Uri.parse(wsUrl);
     ws = WebSocketChannel.connect(uri);
-    _messageStream = ws.stream.cast<String>();
-    _messageStream.listen((event) {
-      _messageController.add(event);
-      _handleMessage(event);
+    ws.stream.listen((message) {
+      _handleMessage(message);
     });
+  }
+
+  void setMessageCallback(MessageCallback callback) {
+    _messageCallback = callback;
   }
 
   Future _handleMessage(String message) async {
@@ -43,8 +44,12 @@ class WebSocketService {
     } else if (type == 'hangup') {
       print('WEBSOCKET -> Remote peer hangup');
       navigatorKey.currentState?.pushReplacementNamed('/contacts');
+    } else {
+      _messageCallback(type, payload);
     }
   }
+
+  void consumeMessage(Function function) {}
 
   bool isConnected() {
     return ws.closeCode == null && ws.closeReason == null;
@@ -56,6 +61,5 @@ class WebSocketService {
 
   void dispose() {
     ws.sink.close();
-    _messageController.close();
   }
 }
