@@ -106,7 +106,15 @@ class _CallPageState extends State<CallPage> {
         body: Stack(
           alignment: AlignmentDirectional.bottomStart,
           children: [
-            RTCVideoView(_localRenderer),
+            RTCVideoView(
+              _localRenderer,
+              placeholderBuilder: (context) {
+                return Container(
+                  color: Colors.grey,
+                  child: Text('Wait for local video ...'),
+                );
+              },
+            ),
             Positioned(
               child: Visibility(
                 visible: _isAnswered,
@@ -124,7 +132,15 @@ class _CallPageState extends State<CallPage> {
                       child: SizedBox(
                         width: 150,
                         height: 200,
-                        child: RTCVideoView(_remoteRenderer),
+                        child: RTCVideoView(
+                          _remoteRenderer,
+                          placeholderBuilder: (context) {
+                            return Container(
+                              color: Colors.grey,
+                              child: Text('Wait for remote video ...'),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ],
