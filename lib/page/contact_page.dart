@@ -1,7 +1,8 @@
+import 'package:dandelion_client/constant.dart';
 import 'package:dandelion_client/dialog/add_contact_dialog.dart';
 import 'package:dandelion_client/model/contact.dart';
-import 'package:dandelion_client/service/rest_client.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:http/http.dart' as http;
 
 class ContactPage extends StatefulWidget {
@@ -49,8 +50,7 @@ class _ContactPageState extends State<ContactPage> {
                 title: Text(contactList.elementAt(index).cellPhoneNumber),
                 subtitle: Text(contactList.elementAt(index).name),
                 trailing: IconButton(
-                  onPressed: () => Navigator.of(context).pushNamed('/call',
-                      arguments: contactList.elementAt(index)),
+                  onPressed: () => Navigator.of(context).pushNamed('/call', arguments: contactList.elementAt(index)),
                   icon: Icon(Icons.call),
                 ),
               ),
@@ -62,16 +62,15 @@ class _ContactPageState extends State<ContactPage> {
   }
 
   Future<void> fetchContacts() async {
-    var contacts = await RestClient.listContacts();
     setState(() {
-      contactList = contacts;
+      //TODO: implement me ...
+      print('Fetch contacts not implemented yet ...');
     });
   }
 
   Future<void> eventListener() async {
     final sseClient = http.Client();
-    final sseRequest =
-        http.Request('GET', Uri.parse('http://example.com/events'));
+    final sseRequest = http.Request('GET', Uri.parse('http://example.com/events'));
     sseRequest.headers['Accept'] = 'text/event-stream';
 
     sseClient.send(sseRequest).then((sseResponse) {

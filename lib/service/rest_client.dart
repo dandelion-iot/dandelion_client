@@ -1,91 +1,47 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:dandelion_client/constant.dart';
-import 'package:dandelion_client/model/contact.dart';
+import 'package:dandelion_client/protobuf/MessageStructure.pb.dart';
+import 'package:dandelion_client/service/h5proto.dart';
 import 'package:http/http.dart' as http;
 
 class RestClient {
-  static String baseURL = '/api/v1/resources';
+  static String rpcPath = '/api/v1/rpc';
 
-  /*
-  * Register new user
-  * */
-  static Future<bool> registerUser(
-      String cellPhoneNumber, String nickName) async {
-    print('Try to register user $cellPhoneNumber with nickname $nickName');
-    String url = '$baseURL/register';
-    print(url);
-    var headers = {'Content-Type': 'application/json'};
-    var queryParams = <String, String>{
-      "cellPhoneNumber": cellPhoneNumber,
-      "nickName": nickName
-    };
+  static var headers = {
+    'Content-Type': 'application/x-protobuf',
+  };
 
-    print(queryParams);
+  static Future exchangeECDH() async {
+    final h5proto = H5Proto.init();
+    var authKeyId = h5proto.generateAuthKeyId();
+    prefs.setString('auth_key_id', base64Encode(authKeyId));
+    var publicKey = h5proto.exportPublicKey();
+    print(publicKey);
+    Message message = Message(content: base64Decode(publicKey));
+    Packet packet = Packet(message: message.writeToBuffer(), rpc: RPC.RPC_PUBLIC_KEY, authKeyId: authKeyId);
 
-    var uri = Uri.https(serverBaseUrl, url, queryParams);
-    print(uri);
-    var response = await http.get(uri, headers: headers);
+    var body = packet.writeToBuffer();
+    var uri = Uri.http(serverBaseUrl, rpcPath);
 
+    final response = await http.post(uri, headers: headers, body: body);
+    var responsePacket = Packet.fromBuffer(response.bodyBytes);
+    var responseMessage = Message.fromBuffer(responsePacket.message);
+
+    var remotePublicKey = h5proto.bytesToPublicKey(Uint8List.fromList(responseMessage.content));
+    var secretKey = h5proto.makeSharedSecret(remotePublicKey);
+    prefs.setString('shared-secret', secretKey.toString());
     return response.statusCode == 200 ? true : false;
   }
 
-  /*
-  * Add a contact
-  * */
-  static Future<bool> addContact(
-      String contactCellPhoneNumber, String name) async {
-    String url = '$baseURL/contact';
-    var cellPhoneNumber = prefs.getString('cellPhoneNumber');
-    var reqParameters = {
-      'cellPhoneNumber': cellPhoneNumber,
-      'contactCellPhoneNumber': contactCellPhoneNumber,
-      'contactName': name,
-    };
-    var headers = {
-      'Content-Type': 'application/json',
-    };
+  static Future rpcCall(String content, RPC rpc) async {
+    Packet packet = await H5Proto.serialize(content, rpc);
+    var body = packet.writeToBuffer();
+    var uri = Uri.http(serverBaseUrl, rpcPath);
+    final response = await http.post(uri, headers: headers, body: body);
 
-    var uri = Uri.https(serverBaseUrl, url, reqParameters);
-    var response = await http.get(uri, headers: headers);
-    if (response.statusCode == 200) {
-      return true;
-    }
-    return false;
-  }
-
-  /*
-  * Fetch list contacts
-  * */
-  static Future<List<Contact>> listContacts() async {
-    String url = '$baseURL/contact/list';
-    var cellPhoneNumber = prefs.getString('cellPhoneNumber');
-    var reqParameters = {'cellPhoneNumber': cellPhoneNumber};
-    var headers = {
-      'Content-Type': 'application/json',
-    };
-
-    var uri = Uri.https(serverBaseUrl, url, reqParameters);
-    var response = await http.get(uri, headers: headers);
-    if (response.statusCode == 200) {
-      final listMap = jsonDecode(response.body) as List<dynamic>;
-      return listMap.map((e) => Contact.fromMap(e)).toList();
-    } else {
-      print('Error: ${response.statusCode}');
-    }
-    return List.empty();
-  }
-
-  static Future<Future<http.StreamedResponse>> sseClient() async {
-    var cellPhoneNumber = prefs.getString('cellPhoneNumber');
-    String url = '$baseURL/sse/$cellPhoneNumber';
-
-    final sseClient = http.Client();
-    var uri = Uri.https(serverBaseUrl, url);
-    final sseRequest = http.Request('GET', uri);
-    sseRequest.headers['Accept'] = 'text/event-stream';
-
-    return sseClient.send(sseRequest);
+    print('body : ${response.statusCode}');
+    print('body : ${response.body}');
   }
 }

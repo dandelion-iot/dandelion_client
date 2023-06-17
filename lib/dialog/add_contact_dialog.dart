@@ -46,9 +46,8 @@ class _AddContactDialogState extends State<AddContactDialog> {
     String cellPhoneNumber = cellPhoneNumberController.text;
     String name = nameNumberController.text;
     if (cellPhoneNumber.isNotEmpty && name.isNotEmpty) {
-      var added = await RestClient.addContact(cellPhoneNumber, name);
-      if (added) widget.updateContactsTable();
-      if (context.mounted) Navigator.of(context,rootNavigator: true).pop('dialog');
+      //TODO: implement me ...
+      print('Add contact not implemented yet ...');
     }
   }
 }

@@ -23,7 +23,7 @@ class Application extends StatelessWidget {
       navigatorKey: _ws.navigatorKey,
       theme: ThemeData.light(),
       title: 'Dandelion',
-      initialRoute: '/register',
+      initialRoute: '/',
       onGenerateRoute: RouteHandler.handle,
     );
   }

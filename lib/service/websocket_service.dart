@@ -20,7 +20,7 @@ class WebSocketService {
   late MessageCallback _messageCallback;
 
   Future init(String channel) async {
-    String wsUrl = 'wss://$serverBaseUrl/webrtc/signal/$channel';
+    String wsUrl = 'ws://$serverBaseUrl/webrtc/signal/$channel';
     print('Connect to $wsUrl');
     uri = Uri.parse(wsUrl);
     ws = WebSocketChannel.connect(uri);

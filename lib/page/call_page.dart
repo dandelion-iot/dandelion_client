@@ -58,7 +58,7 @@ class _CallPageState extends State<CallPage> {
         setState(() {
           _isAnswered = false;
         });
-        playRing();
+        // playRing();
       }
     } catch (e) {
       print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>');
@@ -88,10 +88,10 @@ class _CallPageState extends State<CallPage> {
     }
   }
 
-  Future playRing() async {
-    await player.setReleaseMode(ReleaseMode.loop);
-    await player.play(AssetSource('ring.mp3'));
-  }
+  // Future playRing() async {
+  //   await player.setReleaseMode(ReleaseMode.loop);
+  //   await player.play(AssetSource('ring.mp3'));
+  // }
 
   Future answerToCall() async {
     print('answerToCall clicked');

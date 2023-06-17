@@ -1,6 +1,5 @@
 import 'package:dandelion_client/constant.dart';
 import 'package:dandelion_client/service/rest_client.dart';
-import 'package:dandelion_client/service/websocket_service.dart';
 import 'package:flutter/material.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -12,7 +11,24 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   TextEditingController cellPhoneNumberController = TextEditingController();
-  TextEditingController nickNameController = TextEditingController();
+  late bool sharedSecretState;
+
+  @override
+  void initState() {
+    super.initState();
+    var sharedSecret = prefs.getString('shared-secret');
+    if (prefs.getString('shared-secret') == null || sharedSecret!.isEmpty) {
+      print('Client is not logged in');
+      RestClient.exchangeECDH().then((value) => value ? sharedSecretState = true : sharedSecretState = false);
+    }
+    // else {
+    //   Future.delayed(Duration.zero, () {
+    //     if(mounted) {
+    //       Navigator.of(context).pushReplacementNamed('/contacts');
+    //     }
+    //   });
+    // }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,13 +45,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   child: TextField(
                     controller: cellPhoneNumberController,
                     decoration: InputDecoration(hintText: "Phone number"),
-                  ),
-                ),
-                SizedBox(
-                  width: 250,
-                  child: TextField(
-                    controller: nickNameController,
-                    decoration: InputDecoration(hintText: "Nick name"),
                   ),
                 ),
                 Padding(
@@ -57,17 +66,8 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> register() async {
-    var cellPhoneNumber = cellPhoneNumberController.text;
-    var nickName = nickNameController.text;
-    if (cellPhoneNumber.isNotEmpty && nickName.isNotEmpty) {
-      var isRegistered =
-          await RestClient.registerUser(cellPhoneNumber, nickName);
-      print('isRegistered: $isRegistered');
-      if (isRegistered && context.mounted) {
-        WebSocketService().init(cellPhoneNumber);
-          await prefs.setString('cellPhoneNumber', cellPhoneNumber);
-        if (context.mounted) Navigator.of(context).pushNamed("/contacts");
-      }
-    }
+    // print('register is called');
+    // var cellPhoneNumber = cellPhoneNumberController.text;
+    // RestClient.rpcCall(cellPhoneNumber, RPC.RPC_IDENTITY_AUTH);
   }
 }
