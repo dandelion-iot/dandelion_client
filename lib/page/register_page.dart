@@ -1,5 +1,5 @@
 import 'package:dandelion_client/constant.dart';
-import 'package:dandelion_client/service/rest_client.dart';
+import 'package:dandelion_client/service/rpc_producer.dart';
 import 'package:flutter/material.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -10,24 +10,23 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  TextEditingController cellPhoneNumberController = TextEditingController();
+  TextEditingController inputText = TextEditingController();
   late bool sharedSecretState;
+  bool cellPhoneNumberScene = true;
+  bool pageRefreshed = false;
 
   @override
   void initState() {
     super.initState();
     var sharedSecret = prefs.getString('shared-secret');
-    if (prefs.getString('shared-secret') == null || sharedSecret!.isEmpty) {
+    var activationKey = prefs.getString('activation-key');
+    if (sharedSecret == null || sharedSecret.isEmpty || activationKey == null || activationKey.isEmpty) {
       print('Client is not logged in');
-      RestClient.exchangeECDH().then((value) => value ? sharedSecretState = true : sharedSecretState = false);
+      RPCProducer.sendPublicKey();
+    } else {
+      pageRefreshed = true;
+      verifyActivationKey();
     }
-    // else {
-    //   Future.delayed(Duration.zero, () {
-    //     if(mounted) {
-    //       Navigator.of(context).pushReplacementNamed('/contacts');
-    //     }
-    //   });
-    // }
   }
 
   @override
@@ -43,8 +42,8 @@ class _RegisterPageState extends State<RegisterPage> {
                 SizedBox(
                   width: 250,
                   child: TextField(
-                    controller: cellPhoneNumberController,
-                    decoration: InputDecoration(hintText: "Phone number"),
+                    controller: inputText,
+                    decoration: InputDecoration(hintText: cellPhoneNumberScene ? "Phone number" : "Activation key"),
                   ),
                 ),
                 Padding(
@@ -52,8 +51,8 @@ class _RegisterPageState extends State<RegisterPage> {
                   child: SizedBox(
                     width: 250,
                     child: ElevatedButton(
-                      onPressed: register,
-                      child: Text("Register"),
+                      onPressed: cellPhoneNumberScene ? register : verifyActivationKey,
+                      child: Text(cellPhoneNumberScene ? "Request activation key" : "Verify"),
                     ),
                   ),
                 ),
@@ -66,8 +65,15 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> register() async {
-    // print('register is called');
-    // var cellPhoneNumber = cellPhoneNumberController.text;
-    // RestClient.rpcCall(cellPhoneNumber, RPC.RPC_IDENTITY_AUTH);
+    print('Register called ...');
+    await RPCProducer.sendAuthIdentity(inputText.text);
+    setState(() {
+      cellPhoneNumberScene = false;
+      inputText.text = "";
+    });
+  }
+
+  Future<void> verifyActivationKey() async {
+    await RPCProducer.sendActivationKey(inputText.text);
   }
 }

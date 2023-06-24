@@ -10,19 +10,12 @@ option java_multiple_files = true;
 
 enum RPC {
     RPC_PUBLIC_KEY = 0;
-    RPC_IDENTITY_AUTH = 1;
-    RPC_IDENTITY_INVALID = 2;
-    RPC_ACTIVATION_KEY = 3;
-    RPC_ACTIVATION_KEY_INVALID = 4;
-    RPC_ACTIVATION_KEY_VALID = 5;
-}
-
-message Message {
-    bytes content = 1;
-    string sender = 2;
-    repeated string peers = 3 ;
-    google.protobuf.Timestamp date = 4;
-    repeated bytes padding = 5;
+    RPC_HANDSHAKE_ERROR = 1;
+    RPC_IDENTITY_AUTH = 2;
+    RPC_IDENTITY_INVALID = 3;
+    RPC_ACTIVATION_KEY = 4;
+    RPC_ACTIVATION_KEY_INVALID = 5;
+    RPC_ACTIVATION_KEY_VALID = 6;
 }
 
 message Packet {
@@ -32,3 +25,12 @@ message Packet {
     bytes iv = 4;
     bytes message = 5;
 }
+
+message Message {
+    bytes content = 1;
+    string sender = 2;
+    repeated string peers = 3;
+    google.protobuf.Timestamp date = 4;
+    repeated bytes padding = 5;
+}
+

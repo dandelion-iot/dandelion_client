@@ -6,11 +6,13 @@ import 'package:basic_utils/basic_utils.dart';
 import 'package:dandelion_client/constant.dart';
 import 'package:dandelion_client/protobuf/MessageStructure.pb.dart';
 import 'package:dandelion_client/protobuf/google/protobuf/timestamp.pb.dart';
+import 'package:fixnum/fixnum.dart';
 import 'package:pointycastle/export.dart';
 
 class H5Proto {
   late final AsymmetricKeyPair _keyPair;
   late final ECDomainParameters _domainParameters;
+  late final ECPrivateKey _privateKey;
 
   H5Proto.init() {
     _domainParameters = ECDomainParameters(ECCurve_prime256v1().domainName);
@@ -22,29 +24,36 @@ class H5Proto {
     _keyPair = keyGenerator.generateKeyPair();
   }
 
+  H5Proto.load() {
+    _privateKey = CryptoUtils.ecPrivateKeyFromPem(prefs.getString('private-key')!);
+  }
+
   ECPublicKey _getPublicKey() {
     return _keyPair.publicKey as ECPublicKey;
   }
 
   ECPrivateKey _getPrivateKey() {
-    return _keyPair.privateKey as ECPrivateKey;
+    return _privateKey;
   }
 
   String exportPublicKey() {
     var pem = CryptoUtils.encodeEcPublicKeyToPem(_getPublicKey());
-    return pem.replaceAll('-----BEGIN PUBLIC KEY-----', '')
-        .replaceAll('-----END PUBLIC KEY-----', '')
-        .replaceAll('\n', '');
+    return pem.replaceAll('-----BEGIN PUBLIC KEY-----', '').replaceAll('-----END PUBLIC KEY-----', '').replaceAll('\n', '');
+  }
+
+  String exportPrivateKey() {
+    return CryptoUtils.encodeEcPrivateKeyToPem(_keyPair.privateKey as ECPrivateKey);
   }
 
   ECPublicKey bytesToPublicKey(Uint8List bytes) {
     return CryptoUtils.ecPublicKeyFromDerBytes(bytes);
   }
 
-  BigInt makeSharedSecret(ECPublicKey remotePublicKey) {
+  Uint8List makeSharedSecret(ECPublicKey remotePublicKey) {
     var agreement = ECDHBasicAgreement();
     agreement.init(_getPrivateKey());
-    return agreement.calculateAgreement(remotePublicKey);
+    var value = agreement.calculateAgreement(remotePublicKey);
+    return CryptoUtils.i2osp(value);
   }
 
   static Uint8List _generateIv() {
@@ -63,35 +72,35 @@ class H5Proto {
   }
 
   static Uint8List _getKey() {
-    var sharedSecret = bigIntToUint8Array(BigInt.parse(prefs.getString('shared-secret')!));
-    var saltB64 = prefs.getString('salt');
+    var sharedSecret = prefs.getString('shared-secret')!;
+    var saltB64 = prefs.getString('activation-key');
     if (saltB64 != null) {
-      //FIXME , should use pbkdf2
+      const iterationCount = 1000;
       var salt = base64Decode(saltB64);
-      Uint8List key = Uint8List(sharedSecret.length + salt.length);
-      key.setRange(0, sharedSecret.length, sharedSecret);
-      key.setRange(sharedSecret.length, salt.length, salt);
-      return key;
+
+      final pbkdf2 = PBKDF2KeyDerivator(HMac(SHA256Digest(), 64));
+      final params = Pbkdf2Parameters(Uint8List.fromList(salt), iterationCount, 32);
+      pbkdf2.init(params);
+      return pbkdf2.process(Uint8List.fromList(utf8.encode(sharedSecret)));
     } else {
-      print('Shared Secret: ${base64.encode(sharedSecret)}');
-      return sharedSecret;
+      return base64Decode(sharedSecret);
     }
   }
 
   static Uint8List encrypt(Uint8List bytes, Uint8List iv) {
     var key = _getKey();
-    var aesEngine = AESEngine();
+    final cipher = GCMBlockCipher(AESEngine());
     var params = AEADParameters(KeyParameter(key), 128, iv, Uint8List(0));
-    aesEngine.init(true, params.parameters);
-    return aesEngine.process(bytes);
+    cipher.init(true, params);
+    return cipher.process(bytes);
   }
 
   static Uint8List decrypt(Uint8List bytes, Uint8List iv) {
     var key = _getKey();
-    var aesEngine = AESEngine();
+    final cipher = GCMBlockCipher(AESEngine());
     var params = AEADParameters(KeyParameter(key), 128, iv, Uint8List(0));
-    aesEngine.init(false, params.parameters);
-    return aesEngine.process(bytes);
+    cipher.init(false, params);
+    return cipher.process(bytes);
   }
 
   static Uint8List sha256(Uint8List data) {
@@ -105,23 +114,23 @@ class H5Proto {
     return newHash.toString() == hash.toString();
   }
 
-  static Future<Packet> serialize(String content, RPC rpc) async {
-    var authKeyId = base64Decode(prefs.getString('auth_key_id')!);
-    Message message = Message(content: utf8.encode(content), date: Timestamp.create());
+  static Future<Packet> serialize(Uint8List content, RPC rpc) async {
+    var authKeyId = base64Decode(prefs.getString('auth-key-id')!);
+    Message message = Message();
+    message.content = content;
+    message.date = getCurrentTimestamp();
 
     var hash = sha256(message.writeToBuffer());
     var iv = _generateIv();
     var enc = encrypt(message.writeToBuffer(), iv);
 
-    print('Message : ${base64.encode(message.writeToBuffer())}');
-    print("Encrypted : ${base64.encode(enc)}");
-    print("IV : ${base64.encode(iv)}");
-
-    return Packet(authKeyId: authKeyId,
-        rpc: rpc,
-        hash: hash,
-        iv: iv,
-        message: enc);
+    Packet packet = Packet();
+    packet.authKeyId = authKeyId;
+    packet.rpc = rpc;
+    packet.hash = hash;
+    packet.iv = iv;
+    packet.message = enc;
+    return packet;
   }
 
   static Future<Message> deserialize(Uint8List bytes, Uint8List iv) async {
@@ -147,5 +156,35 @@ class H5Proto {
       bytes[i] = random.nextInt(256);
     }
     return bytes;
+  }
+
+  static Timestamp getCurrentTimestamp() {
+    final now = DateTime.now();
+    final timestamp = Timestamp();
+    timestamp.seconds = Int64(now.microsecondsSinceEpoch ~/ Duration.microsecondsPerSecond);
+    timestamp.nanos = now.microsecond;
+    return timestamp;
+  }
+
+  static void storeSharedSecret(Uint8List sharedSecret) {
+    prefs.setString('shared-secret', base64Encode(sharedSecret));
+  }
+
+  static void storeActivationKey(String activationKey) {
+    prefs.setString('activation-key', base64Encode(utf8.encode(activationKey)));
+  }
+
+  static void storeAuthKeyId(String authKeyId) {
+    prefs.setString('auth-key-id', authKeyId);
+  }
+
+  static void invalidateCredentials() {
+    prefs.remove('auth-key-id');
+    prefs.remove('shared-secret');
+    prefs.remove('activation-key');
+  }
+
+  static void removePrivateKey() {
+    prefs.remove('private-key');
   }
 }

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# (cd .. ; flutter pub global activate protoc_plugin)
+
 WORK_DIR=$(dirname "$0")
 cd "${WORK_DIR}"
 
