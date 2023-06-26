@@ -24,6 +24,7 @@ const RPC$json = {
     {'1': 'RPC_ACTIVATION_KEY', '2': 4},
     {'1': 'RPC_ACTIVATION_KEY_INVALID', '2': 5},
     {'1': 'RPC_ACTIVATION_KEY_VALID', '2': 6},
+    {'1': 'RPC_INVALID_DEVICE_ID', '2': 7},
   ],
 };
 
@@ -32,13 +33,13 @@ final $typed_data.Uint8List rPCDescriptor = $convert.base64Decode(
     'CgNSUEMSEgoOUlBDX1BVQkxJQ19LRVkQABIXChNSUENfSEFORFNIQUtFX0VSUk9SEAESFQoRUl'
     'BDX0lERU5USVRZX0FVVEgQAhIYChRSUENfSURFTlRJVFlfSU5WQUxJRBADEhYKElJQQ19BQ1RJ'
     'VkFUSU9OX0tFWRAEEh4KGlJQQ19BQ1RJVkFUSU9OX0tFWV9JTlZBTElEEAUSHAoYUlBDX0FDVE'
-    'lWQVRJT05fS0VZX1ZBTElEEAY=');
+    'lWQVRJT05fS0VZX1ZBTElEEAYSGQoVUlBDX0lOVkFMSURfREVWSUNFX0lEEAc=');
 
 @$core.Deprecated('Use packetDescriptor instead')
 const Packet$json = {
   '1': 'Packet',
   '2': [
-    {'1': 'auth_key_id', '3': 1, '4': 1, '5': 12, '10': 'authKeyId'},
+    {'1': 'device_id', '3': 1, '4': 1, '5': 12, '10': 'deviceId'},
     {'1': 'rpc', '3': 2, '4': 1, '5': 14, '6': '.roboexchange.RPC', '10': 'rpc'},
     {'1': 'hash', '3': 3, '4': 1, '5': 12, '10': 'hash'},
     {'1': 'iv', '3': 4, '4': 1, '5': 12, '10': 'iv'},
@@ -48,9 +49,9 @@ const Packet$json = {
 
 /// Descriptor for `Packet`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List packetDescriptor = $convert.base64Decode(
-    'CgZQYWNrZXQSHgoLYXV0aF9rZXlfaWQYASABKAxSCWF1dGhLZXlJZBIjCgNycGMYAiABKA4yES'
-    '5yb2JvZXhjaGFuZ2UuUlBDUgNycGMSEgoEaGFzaBgDIAEoDFIEaGFzaBIOCgJpdhgEIAEoDFIC'
-    'aXYSGAoHbWVzc2FnZRgFIAEoDFIHbWVzc2FnZQ==');
+    'CgZQYWNrZXQSGwoJZGV2aWNlX2lkGAEgASgMUghkZXZpY2VJZBIjCgNycGMYAiABKA4yES5yb2'
+    'JvZXhjaGFuZ2UuUlBDUgNycGMSEgoEaGFzaBgDIAEoDFIEaGFzaBIOCgJpdhgEIAEoDFICaXYS'
+    'GAoHbWVzc2FnZRgFIAEoDFIHbWVzc2FnZQ==');
 
 @$core.Deprecated('Use messageDescriptor instead')
 const Message$json = {

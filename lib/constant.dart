@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 // var serverBaseUrl = "roboexchange.ir:8443";
@@ -26,3 +27,4 @@ var mediaConstraints = {
 };
 
 late SharedPreferences prefs;
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();

@@ -16,10 +16,11 @@ enum RPC {
     RPC_ACTIVATION_KEY = 4;
     RPC_ACTIVATION_KEY_INVALID = 5;
     RPC_ACTIVATION_KEY_VALID = 6;
+    RPC_INVALID_DEVICE_ID = 7;
 }
 
 message Packet {
-    bytes auth_key_id = 1;
+    bytes device_id = 1;
     RPC rpc = 2;
     bytes hash = 3;
     bytes iv = 4;

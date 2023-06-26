@@ -115,7 +115,7 @@ class H5Proto {
   }
 
   static Future<Packet> serialize(Uint8List content, RPC rpc) async {
-    var authKeyId = base64Decode(prefs.getString('auth-key-id')!);
+    var deviceId = utf8.encode(getDeviceId()!);
     Message message = Message();
     message.content = content;
     message.date = getCurrentTimestamp();
@@ -125,7 +125,7 @@ class H5Proto {
     var enc = encrypt(message.writeToBuffer(), iv);
 
     Packet packet = Packet();
-    packet.authKeyId = authKeyId;
+    packet.deviceId = deviceId;
     packet.rpc = rpc;
     packet.hash = hash;
     packet.iv = iv;
@@ -149,15 +149,6 @@ class H5Proto {
     return secureRandom;
   }
 
-  Uint8List generateAuthKeyId() {
-    final random = Random.secure();
-    final bytes = Uint8List(8);
-    for (var i = 0; i < bytes.length; i++) {
-      bytes[i] = random.nextInt(256);
-    }
-    return bytes;
-  }
-
   static Timestamp getCurrentTimestamp() {
     final now = DateTime.now();
     final timestamp = Timestamp();
@@ -174,17 +165,34 @@ class H5Proto {
     prefs.setString('activation-key', base64Encode(utf8.encode(activationKey)));
   }
 
-  static void storeAuthKeyId(String authKeyId) {
-    prefs.setString('auth-key-id', authKeyId);
+  static void storeDeviceId(String deviceId) {
+    prefs.setString('device-id', deviceId);
   }
 
   static void invalidateCredentials() {
-    prefs.remove('auth-key-id');
+    var deviceId = prefs.getString('device-id');
+    if (deviceId == null || deviceId.isEmpty) prefs.remove('device-id');
     prefs.remove('shared-secret');
     prefs.remove('activation-key');
   }
 
   static void removePrivateKey() {
     prefs.remove('private-key');
+  }
+
+  static String? getSharedSecret() {
+    var sharedSecret = prefs.getString('shared-secret');
+    if (sharedSecret != null && sharedSecret.isEmpty) return null;
+    return sharedSecret;
+  }
+
+  static String? getActivationKey() {
+    var activationKey = prefs.getString('activation-key');
+    if (activationKey == null || activationKey.isEmpty) return null;
+    return utf8.decode(base64Decode(activationKey));
+  }
+
+  static String? getDeviceId() {
+    return prefs.getString('device-id');
   }
 }

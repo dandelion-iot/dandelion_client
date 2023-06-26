@@ -25,7 +25,7 @@ class Packet extends $pb.GeneratedMessage {
   factory Packet.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Packet', package: const $pb.PackageName(_omitMessageNames ? '' : 'roboexchange'), createEmptyInstance: create)
-    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'authKeyId', $pb.PbFieldType.OY)
+    ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'deviceId', $pb.PbFieldType.OY)
     ..e<RPC>(2, _omitFieldNames ? '' : 'rpc', $pb.PbFieldType.OE, defaultOrMaker: RPC.RPC_PUBLIC_KEY, valueOf: RPC.valueOf, enumValues: RPC.values)
     ..a<$core.List<$core.int>>(3, _omitFieldNames ? '' : 'hash', $pb.PbFieldType.OY)
     ..a<$core.List<$core.int>>(4, _omitFieldNames ? '' : 'iv', $pb.PbFieldType.OY)
@@ -55,13 +55,13 @@ class Packet extends $pb.GeneratedMessage {
   static Packet? _defaultInstance;
 
   @$pb.TagNumber(1)
-  $core.List<$core.int> get authKeyId => $_getN(0);
+  $core.List<$core.int> get deviceId => $_getN(0);
   @$pb.TagNumber(1)
-  set authKeyId($core.List<$core.int> v) { $_setBytes(0, v); }
+  set deviceId($core.List<$core.int> v) { $_setBytes(0, v); }
   @$pb.TagNumber(1)
-  $core.bool hasAuthKeyId() => $_has(0);
+  $core.bool hasDeviceId() => $_has(0);
   @$pb.TagNumber(1)
-  void clearAuthKeyId() => clearField(1);
+  void clearDeviceId() => clearField(1);
 
   @$pb.TagNumber(2)
   RPC get rpc => $_getN(1);

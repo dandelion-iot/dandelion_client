@@ -21,6 +21,7 @@ class RPC extends $pb.ProtobufEnum {
   static const RPC RPC_ACTIVATION_KEY = RPC._(4, _omitEnumNames ? '' : 'RPC_ACTIVATION_KEY');
   static const RPC RPC_ACTIVATION_KEY_INVALID = RPC._(5, _omitEnumNames ? '' : 'RPC_ACTIVATION_KEY_INVALID');
   static const RPC RPC_ACTIVATION_KEY_VALID = RPC._(6, _omitEnumNames ? '' : 'RPC_ACTIVATION_KEY_VALID');
+  static const RPC RPC_INVALID_DEVICE_ID = RPC._(7, _omitEnumNames ? '' : 'RPC_INVALID_DEVICE_ID');
 
   static const $core.List<RPC> values = <RPC> [
     RPC_PUBLIC_KEY,
@@ -30,6 +31,7 @@ class RPC extends $pb.ProtobufEnum {
     RPC_ACTIVATION_KEY,
     RPC_ACTIVATION_KEY_INVALID,
     RPC_ACTIVATION_KEY_VALID,
+    RPC_INVALID_DEVICE_ID,
   ];
 
   static final $core.Map<$core.int, RPC> _byValue = $pb.ProtobufEnum.initByValue(values);

@@ -15,10 +15,6 @@ class RPCProducer {
     var exportPrivateKey = h5proto.exportPrivateKey();
     prefs.setString('private-key', exportPrivateKey);
 
-    /* generate random auth-key-id */
-    var authKeyId = h5proto.generateAuthKeyId();
-    H5Proto.storeAuthKeyId(base64Encode(authKeyId));
-
     /* export public key */
     var publicKey = h5proto.exportPublicKey();
 
@@ -28,7 +24,6 @@ class RPCProducer {
     Packet packet = Packet();
     packet.message = message.writeToBuffer();
     packet.rpc = RPC.RPC_PUBLIC_KEY;
-    packet.authKeyId = authKeyId;
 
     await RestClient.sendPacket(packet);
   }

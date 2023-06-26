@@ -1,4 +1,5 @@
 import 'package:dandelion_client/constant.dart';
+import 'package:dandelion_client/service/h5proto.dart';
 import 'package:dandelion_client/service/rpc_producer.dart';
 import 'package:flutter/material.dart';
 
@@ -18,10 +19,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   void initState() {
     super.initState();
-    var sharedSecret = prefs.getString('shared-secret');
-    var activationKey = prefs.getString('activation-key');
-    if (sharedSecret == null || sharedSecret.isEmpty || activationKey == null || activationKey.isEmpty) {
-      print('Client is not logged in');
+    if (H5Proto.getActivationKey() == null || H5Proto.getSharedSecret() == null) {
       RPCProducer.sendPublicKey();
     } else {
       pageRefreshed = true;
@@ -65,7 +63,6 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> register() async {
-    print('Register called ...');
     await RPCProducer.sendAuthIdentity(inputText.text);
     setState(() {
       cellPhoneNumberScene = false;
@@ -74,6 +71,11 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> verifyActivationKey() async {
-    await RPCProducer.sendActivationKey(inputText.text);
+    var activationKey = inputText.text;
+    if (pageRefreshed == true) activationKey = H5Proto.getActivationKey()!;
+    await RPCProducer.sendActivationKey(activationKey);
+    setState(() {
+      pageRefreshed = false;
+    });
   }
 }

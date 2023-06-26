@@ -2,14 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:dandelion_client/constant.dart';
-import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 typedef MessageCallback = void Function(String type, Map<String, dynamic>);
 
 class WebSocketService {
   static final WebSocketService _singleton = WebSocketService._internal();
-  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
   factory WebSocketService() => _singleton;
 
