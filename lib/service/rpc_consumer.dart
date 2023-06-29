@@ -50,7 +50,6 @@ class RPCConsumer {
   }
 
   static void _initPublicKey(Message message,Uint8List deviceId) {
-    print('Receive shared secret');
     H5Proto.storeDeviceId(utf8.decode(deviceId));
     var h5proto = H5Proto.load();
     var remotePublicKey = h5proto.bytesToPublicKey(Uint8List.fromList(message.content));

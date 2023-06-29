@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 
 class RouteHandler {
   static Route<dynamic> handle(RouteSettings settings) {
-    print('${settings.name}');
     switch (settings.name) {
       case "/contacts":
         return MaterialPageRoute(builder: (_) => ContactPage());
