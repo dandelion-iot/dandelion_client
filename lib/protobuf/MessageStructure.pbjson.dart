@@ -25,6 +25,10 @@ const RPC$json = {
     {'1': 'RPC_ACTIVATION_KEY_INVALID', '2': 5},
     {'1': 'RPC_ACTIVATION_KEY_VALID', '2': 6},
     {'1': 'RPC_INVALID_DEVICE_ID', '2': 7},
+    {'1': 'RPC_WEBRTC_JOIN', '2': 8},
+    {'1': 'RPC_WEBRTC_JOINED', '2': 9},
+    {'1': 'RPC_WEBRTC_HANGUP', '2': 10},
+    {'1': 'RPC_WEBRTC_GENERIC', '2': 11},
   ],
 };
 
@@ -33,7 +37,9 @@ final $typed_data.Uint8List rPCDescriptor = $convert.base64Decode(
     'CgNSUEMSEgoOUlBDX1BVQkxJQ19LRVkQABIXChNSUENfSEFORFNIQUtFX0VSUk9SEAESFQoRUl'
     'BDX0lERU5USVRZX0FVVEgQAhIYChRSUENfSURFTlRJVFlfSU5WQUxJRBADEhYKElJQQ19BQ1RJ'
     'VkFUSU9OX0tFWRAEEh4KGlJQQ19BQ1RJVkFUSU9OX0tFWV9JTlZBTElEEAUSHAoYUlBDX0FDVE'
-    'lWQVRJT05fS0VZX1ZBTElEEAYSGQoVUlBDX0lOVkFMSURfREVWSUNFX0lEEAc=');
+    'lWQVRJT05fS0VZX1ZBTElEEAYSGQoVUlBDX0lOVkFMSURfREVWSUNFX0lEEAcSEwoPUlBDX1dF'
+    'QlJUQ19KT0lOEAgSFQoRUlBDX1dFQlJUQ19KT0lORUQQCRIVChFSUENfV0VCUlRDX0hBTkdVUB'
+    'AKEhYKElJQQ19XRUJSVENfR0VORVJJQxAL');
 
 @$core.Deprecated('Use packetDescriptor instead')
 const Packet$json = {
@@ -60,14 +66,27 @@ const Message$json = {
     {'1': 'content', '3': 1, '4': 1, '5': 12, '10': 'content'},
     {'1': 'sender', '3': 2, '4': 1, '5': 9, '10': 'sender'},
     {'1': 'peers', '3': 3, '4': 3, '5': 9, '10': 'peers'},
-    {'1': 'date', '3': 4, '4': 1, '5': 11, '6': '.google.protobuf.Timestamp', '10': 'date'},
-    {'1': 'padding', '3': 5, '4': 3, '5': 12, '10': 'padding'},
+    {'1': 'timestamp', '3': 4, '4': 1, '5': 3, '10': 'timestamp'},
+    {'1': 'padding', '3': 5, '4': 1, '5': 12, '10': 'padding'},
   ],
 };
 
 /// Descriptor for `Message`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List messageDescriptor = $convert.base64Decode(
     'CgdNZXNzYWdlEhgKB2NvbnRlbnQYASABKAxSB2NvbnRlbnQSFgoGc2VuZGVyGAIgASgJUgZzZW'
-    '5kZXISFAoFcGVlcnMYAyADKAlSBXBlZXJzEi4KBGRhdGUYBCABKAsyGi5nb29nbGUucHJvdG9i'
-    'dWYuVGltZXN0YW1wUgRkYXRlEhgKB3BhZGRpbmcYBSADKAxSB3BhZGRpbmc=');
+    '5kZXISFAoFcGVlcnMYAyADKAlSBXBlZXJzEhwKCXRpbWVzdGFtcBgEIAEoA1IJdGltZXN0YW1w'
+    'EhgKB3BhZGRpbmcYBSABKAxSB3BhZGRpbmc=');
+
+@$core.Deprecated('Use webRtcMessageDescriptor instead')
+const WebRtcMessage$json = {
+  '1': 'WebRtcMessage',
+  '2': [
+    {'1': 'room', '3': 1, '4': 1, '5': 9, '10': 'room'},
+    {'1': 'ice', '3': 2, '4': 1, '5': 9, '10': 'ice'},
+  ],
+};
+
+/// Descriptor for `WebRtcMessage`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List webRtcMessageDescriptor = $convert.base64Decode(
+    'Cg1XZWJSdGNNZXNzYWdlEhIKBHJvb20YASABKAlSBHJvb20SEAoDaWNlGAIgASgJUgNpY2U=');
 

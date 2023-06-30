@@ -11,10 +11,10 @@
 
 import 'dart:core' as $core;
 
+import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:protobuf/protobuf.dart' as $pb;
 
 import 'MessageStructure.pbenum.dart';
-import 'google/protobuf/timestamp.pb.dart' as $0;
 
 export 'MessageStructure.pbenum.dart';
 
@@ -110,8 +110,8 @@ class Message extends $pb.GeneratedMessage {
     ..a<$core.List<$core.int>>(1, _omitFieldNames ? '' : 'content', $pb.PbFieldType.OY)
     ..aOS(2, _omitFieldNames ? '' : 'sender')
     ..pPS(3, _omitFieldNames ? '' : 'peers')
-    ..aOM<$0.Timestamp>(4, _omitFieldNames ? '' : 'date', subBuilder: $0.Timestamp.create)
-    ..p<$core.List<$core.int>>(5, _omitFieldNames ? '' : 'padding', $pb.PbFieldType.PY)
+    ..aInt64(4, _omitFieldNames ? '' : 'timestamp')
+    ..a<$core.List<$core.int>>(5, _omitFieldNames ? '' : 'padding', $pb.PbFieldType.OY)
     ..hasRequiredFields = false
   ;
 
@@ -158,18 +158,74 @@ class Message extends $pb.GeneratedMessage {
   $core.List<$core.String> get peers => $_getList(2);
 
   @$pb.TagNumber(4)
-  $0.Timestamp get date => $_getN(3);
+  $fixnum.Int64 get timestamp => $_getI64(3);
   @$pb.TagNumber(4)
-  set date($0.Timestamp v) { setField(4, v); }
+  set timestamp($fixnum.Int64 v) { $_setInt64(3, v); }
   @$pb.TagNumber(4)
-  $core.bool hasDate() => $_has(3);
+  $core.bool hasTimestamp() => $_has(3);
   @$pb.TagNumber(4)
-  void clearDate() => clearField(4);
-  @$pb.TagNumber(4)
-  $0.Timestamp ensureDate() => $_ensure(3);
+  void clearTimestamp() => clearField(4);
 
   @$pb.TagNumber(5)
-  $core.List<$core.List<$core.int>> get padding => $_getList(4);
+  $core.List<$core.int> get padding => $_getN(4);
+  @$pb.TagNumber(5)
+  set padding($core.List<$core.int> v) { $_setBytes(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasPadding() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearPadding() => clearField(5);
+}
+
+class WebRtcMessage extends $pb.GeneratedMessage {
+  factory WebRtcMessage() => create();
+  WebRtcMessage._() : super();
+  factory WebRtcMessage.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory WebRtcMessage.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'WebRtcMessage', package: const $pb.PackageName(_omitMessageNames ? '' : 'roboexchange'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'room')
+    ..aOS(2, _omitFieldNames ? '' : 'ice')
+    ..hasRequiredFields = false
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  WebRtcMessage clone() => WebRtcMessage()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  WebRtcMessage copyWith(void Function(WebRtcMessage) updates) => super.copyWith((message) => updates(message as WebRtcMessage)) as WebRtcMessage;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static WebRtcMessage create() => WebRtcMessage._();
+  WebRtcMessage createEmptyInstance() => create();
+  static $pb.PbList<WebRtcMessage> createRepeated() => $pb.PbList<WebRtcMessage>();
+  @$core.pragma('dart2js:noInline')
+  static WebRtcMessage getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<WebRtcMessage>(create);
+  static WebRtcMessage? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get room => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set room($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasRoom() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearRoom() => clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get ice => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set ice($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasIce() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearIce() => clearField(2);
 }
 
 

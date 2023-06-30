@@ -22,7 +22,7 @@ class RestClient {
   }
 
   static Future<void> rpcCall(Uint8List content, RPC rpc) async {
-    Packet packet = await H5Proto.serialize(content, rpc);
+    Packet packet = await H5Proto.encode(content, rpc);
     var body = packet.writeToBuffer();
     var uri = Uri.http(serverBaseUrl, rpcPath);
     var response = await http.post(uri, headers: headers, body: body);

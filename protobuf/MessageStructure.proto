@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package roboexchange;
 
-import "google/protobuf/timestamp.proto";
-
 option java_package = "ir.moke.dandelion.protobuf";
 option java_outer_classname = "RequestMessageProtos";
 option java_multiple_files = true;
@@ -17,6 +15,12 @@ enum RPC {
     RPC_ACTIVATION_KEY_INVALID = 5;
     RPC_ACTIVATION_KEY_VALID = 6;
     RPC_INVALID_DEVICE_ID = 7;
+    RPC_WEBRTC_JOIN = 8;
+    RPC_WEBRTC_JOINED = 9;
+    RPC_WEBRTC_HANGUP = 10;
+    RPC_WEBRTC_OFFER = 12;
+    RPC_WEBRTC_ANSWER = 13;
+    RPC_WEBRTC_ICE = 14;
 }
 
 message Packet {
@@ -31,7 +35,11 @@ message Message {
     bytes content = 1;
     string sender = 2;
     repeated string peers = 3;
-    google.protobuf.Timestamp date = 4;
-    repeated bytes padding = 5;
+    int64 timestamp = 4;
+    bytes padding = 5;
 }
 
+message WebRtcMessage {
+    string room = 1;
+    string ice = 2;
+}

@@ -43,6 +43,9 @@ class RPCConsumer {
         case RPC.RPC_INVALID_DEVICE_ID:
           _invalidDeviceId();
           break;
+        case RPC.RPC_WEBRTC_JOIN:
+          _webRTCJoin(message.writeToBuffer(),Uint8List.fromList(iv));
+          break;
         default:
           print('Unknown rpc $rpc');
       }
@@ -83,5 +86,14 @@ class RPCConsumer {
     H5Proto.invalidateCredentials();
     await RPCProducer.sendPublicKey();
     navigatorKey.currentState?.pushReplacementNamed('/register');
+  }
+
+  static Future<void> _webRTCJoin(Uint8List data,Uint8List iv) async {
+    var message = await H5Proto.decode(data, iv);
+    var webRtcMessage = WebRtcMessage.fromBuffer(message.content);
+    var room = webRtcMessage.room;
+    await prefs.setString('room', room);
+    print('WEBSOCKET -> Receive joined message');
+    navigatorKey.currentState?.pushNamed('/call');
   }
 }

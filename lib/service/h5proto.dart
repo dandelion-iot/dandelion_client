@@ -5,7 +5,6 @@ import 'dart:typed_data';
 import 'package:basic_utils/basic_utils.dart';
 import 'package:dandelion_client/constant.dart';
 import 'package:dandelion_client/protobuf/MessageStructure.pb.dart';
-import 'package:dandelion_client/protobuf/google/protobuf/timestamp.pb.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:pointycastle/export.dart';
 
@@ -114,11 +113,11 @@ class H5Proto {
     return newHash.toString() == hash.toString();
   }
 
-  static Future<Packet> serialize(Uint8List content, RPC rpc) async {
+  static Future<Packet> encode(Uint8List content, RPC rpc) async {
     var deviceId = utf8.encode(getDeviceId()!);
     Message message = Message();
     message.content = content;
-    message.date = getCurrentTimestamp();
+    message.timestamp = getCurrentTimestamp();
 
     var hash = sha256(message.writeToBuffer());
     var iv = _generateIv();
@@ -133,7 +132,7 @@ class H5Proto {
     return packet;
   }
 
-  static Future<Message> deserialize(Uint8List bytes, Uint8List iv) async {
+  static Future<Message> decode(Uint8List bytes, Uint8List iv) async {
     var dec = decrypt(bytes, iv);
     return Message.fromBuffer(dec);
   }
@@ -149,12 +148,8 @@ class H5Proto {
     return secureRandom;
   }
 
-  static Timestamp getCurrentTimestamp() {
-    final now = DateTime.now();
-    final timestamp = Timestamp();
-    timestamp.seconds = Int64(now.microsecondsSinceEpoch ~/ Duration.microsecondsPerSecond);
-    timestamp.nanos = now.microsecond;
-    return timestamp;
+  static Int64 getCurrentTimestamp() {
+     return Int64(DateTime.now().millisecondsSinceEpoch);
   }
 
   static void storeSharedSecret(Uint8List sharedSecret) {
